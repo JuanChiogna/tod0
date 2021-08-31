@@ -1,108 +1,100 @@
 import json
-import os
-import pickle
+from oauth import get_oauth_session
 
-from todocli.oauth import get_oauth_session, config_dir
-
-base_api_url = "https://graph.microsoft.com/beta/me/outlook/"
+todo_api_url = "https://graph.microsoft.com/beta/me/todo/"
+calendar_api_url = "https://graph.microsoft.com/beta/me"
 
 
 def parse_contents(response):
     return json.loads(response.content.decode())["value"]
 
 
-def list_tasks(all_=False, folder=""):
-    outlook = get_oauth_session()
+# To Do data
+def list_tasklists():
+    to_do = get_oauth_session()
+    t = to_do.get("{}/lists".format(todo_api_url))
+    return parse_contents(t)
 
-    if folder == "":
-        if all_:
-            o = outlook.get("{}/tasks?top=100".format(base_api_url))
-        else:
-            o = outlook.get(
-                "{}/tasks?filter=status ne 'completed'&top=100".format(base_api_url)
-            )
-    else:
-        if all_:
-            o = outlook.get(
-                "{}/taskFolders/{}/tasks?top=100".format(base_api_url, folder)
-            )
-        else:
-            o = outlook.get(
-                "{}/taskFolders/{}/tasks?filter=status ne 'completed'&top=100".format(
-                    base_api_url, folder
-                )
-            )
-
-    return parse_contents(o)
+def list_tasks(tasklist_id):
+    to_do = get_oauth_session()
+    t = to_do.get("{}/lists/{}/tasks".format(todo_api_url, tasklist_id))
+    nextLink = json.loads(t.content.decode()).get("@odata.nextLink", "")
+    parsed_t = parse_contents(t)
+    while nextLink != "":
+        n = to_do.get(nextLink)
+        nextLink = json.loads(n.content.decode()).get("@odata.nextLink", "")
+        parsed_n = parse_contents(n)
+        parsed_t.extend(parsed_n)
+    return parsed_t
 
 
-def list_and_update_folders():
-    outlook = get_oauth_session()
-    o = outlook.get("{}/taskFolders?top=20".format(base_api_url))
-    contents = parse_contents(o)
+# Calendar data
+def list_calendars():
+    calendar = get_oauth_session()
+    c = calendar.get("{}/calendars".format(calendar_api_url))
+    return parse_contents(c)
 
-    # Cache folders
-    name2id = {}
-    id2name = {}
-
-    folders = parse_contents(o)
-    for f in folders:
-        name2id[f["name"]] = f["id"]
-        id2name[f["id"]] = f["name"]
-
-    with open(os.path.join(config_dir, "folder_name2id.pkl"), "wb") as f:
-        pickle.dump(name2id, f)
-    with open(os.path.join(config_dir, "folder_id2name.pkl"), "wb") as f:
-        pickle.dump(id2name, f)
-
-    return contents
+def list_events(calendar_id):
+    calendar = get_oauth_session()
+    c = calendar.get("{}/calendars/{}/events".format(calendar_api_url, calendar_id))
+    nextLink = json.loads(c.content.decode()).get("@odata.nextLink", "")
+    parsed_c = parse_contents(c)
+    while nextLink != "":
+        n = calendar.get(nextLink)
+        nextLink = json.loads(n.content.decode()).get("@odata.nextLink", "")
+        parsed_n = parse_contents(n)
+        parsed_c.extend(parsed_n)
+    return parsed_c
 
 
-def create_folder(name):
-    """Create folder with name `name`"""
-    outlook = get_oauth_session()
+# To Do Tasklists
+def create_tasklist(title):
+    to_do = get_oauth_session()
+    request_body = {"displayName": title}
+    t = to_do.post("{}/lists".format(todo_api_url), json=request_body)
+    return t.ok
 
-    # Fill request body
-    request_body = {"name": name}
+def delete_tasklist(tasklist_id):
+    to_do = get_oauth_session()
+    t = to_do.delete("{}/lists/{}".format(todo_api_url, tasklist_id))
+    return t.ok
 
-    o = outlook.post("{}/taskFolders".format(base_api_url), json=request_body)
-
-    return o.ok
-
-
-def delete_folder(folder_id):
-    """Delete folder with id `folder_id`"""
-    outlook = get_oauth_session()
-    o = outlook.delete("{}/taskFolders/{}".format(base_api_url, folder_id))
-    return o.ok
-
-
-def create_task(text, folder=None):
-    """Create task with subject `text`"""
-    outlook = get_oauth_session()
-
-    # Fill request body
-    request_body = {"subject": text}
-
-    if folder is None:
-        o = outlook.post("{}/tasks".format(base_api_url), json=request_body)
-    else:
-        o = outlook.post(
-            "{}/taskFolders/{}/tasks".format(base_api_url, folder), json=request_body
-        )
-
-    return o.ok
+def update_tasklist(tasklist_id, request_body):
+    to_do = get_oauth_session()
+    t = to_do.patch("{}/lists/{}".format(todo_api_url, tasklist_id), json=request_body)
+    return t.ok
 
 
-def delete_task(task_id):
-    outlook = get_oauth_session()
+# To Do Tasks
+def create_task(tasklist_id, title, request_body={}):
+    to_do = get_oauth_session()
+    request_body.update({"title": title})
+    t = to_do.post("{}/lists/{}/tasks".format(todo_api_url, tasklist_id), json=request_body)
+    return t.ok
 
-    o = outlook.delete("{}/tasks/{}".format(base_api_url, task_id))
-    return o.ok
+def delete_task(tasklist_id, task_id):
+    to_do = get_oauth_session()
+    t = to_do.delete("{}/lists/{}/tasks/{}".format(todo_api_url, tasklist_id, task_id))
+    return t.ok
+
+def update_task(tasklist_id, task_id, request_body):
+    to_do = get_oauth_session()
+    t = to_do.patch("{}/lists/{}/tasks/{}".format(todo_api_url, tasklist_id, task_id), 
+    json=request_body)
+    return t.ok
 
 
-def complete_task(task_id):
-    outlook = get_oauth_session()
+# Calendar Events
+def create_event(calendar_id, title, request_body={}):
+    calendar = get_oauth_session()
+    request_body.update({"subject": title})
+    c = calendar.post("{}/calendars/{}/events".format(calendar_api_url, calendar_id), json=request_body)
+    return c.ok
 
-    o = outlook.post("{}/tasks/{}/complete".format(base_api_url, task_id))
-    return o.ok
+def delete_event(calendar_id, event_id):
+    calendar = get_oauth_session()
+    c = calendar.delete("{}/calendars/{}/events/{}".format(calendar_api_url, calendar_id, event_id))
+    return c.ok
+
+def update_event(calendar_id, event_id, request_body):
+    calendar = get_oauth_session()
