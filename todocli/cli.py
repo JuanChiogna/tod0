@@ -2,14 +2,14 @@ import argparse
 import shlex
 import sys
 
-import todo_api as todo_api
-from utils.datetime_util import (
+import todocli.todo_api as todo_api
+from todocli.utils.datetime_util import (
     parse_datetime,
     TimeExpressionNotRecognized,
     ErrorParsingTime,
 )
-from error import eprint
-from help_msg import help_msg
+from todocli.error import eprint
+from todocli.help_msg import help_msg
 
 
 class InvalidTaskPath(Exception):

@@ -1,5 +1,5 @@
+from todocli.oauth import get_oauth_session
 import json
-from oauth import get_oauth_session
 
 todo_api_url = "https://graph.microsoft.com/beta/me/todo/"
 calendar_api_url = "https://graph.microsoft.com/beta/me"

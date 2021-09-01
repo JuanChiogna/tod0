@@ -1,6 +1,6 @@
-import auth
-import time
 from datetime import datetime
+from todocli import auth
+import time
 
 class Tasklist():
     def __init__(self, data):

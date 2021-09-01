@@ -5,18 +5,18 @@ https://docs.microsoft.com/en-us/graph/api/resources/todo-overview?view=graph-re
 from datetime import datetime
 from typing import Union
 
-from models.todolist import TodoList
-from models.task import Task
+from todocli.models.todolist import TodoList
+from todocli.models.task import Task
 
-import api_urls
-from rest_request import (
+from todocli import api_urls
+from todocli.rest_request import (
     RestRequestGet,
     RestRequestPost,
     RestRequestPatch,
     RestRequestDelete,
     RestRequestWithBody,
 )
-from utils.datetime_util import datetime_to_api_timestamp
+from todocli.utils.datetime_util import datetime_to_api_timestamp
 
 list_ids_cached = {}
 
