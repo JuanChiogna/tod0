@@ -19,8 +19,8 @@ setup(
     include_package_data=True,
     entry_points="""
         [console_scripts]
-        tod0=todocli.interface:run
-        todocli=todocli.cli:main
+        tod0=todocli.tod0:move_tasks_by_date
+        quicktask=todocli.tod0:quick_task
     """,
     python_requires=">=3.6",
 )
