@@ -4,7 +4,6 @@ import json
 todo_api_url = "https://graph.microsoft.com/beta/me/todo/"
 calendar_api_url = "https://graph.microsoft.com/beta/me"
 
-
 def parse_contents(response):
     return json.loads(response.content.decode())["value"]
 

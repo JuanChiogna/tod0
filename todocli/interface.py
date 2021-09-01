@@ -30,22 +30,18 @@ class Tasklist():
 
     def get_tasks(self):
         # Loads all tasks from the tasklist
-        # print("\n" + self.displayName + "\n")
         self.tasks = []
         task_data = auth.list_tasks(self.id)
         for tsk in task_data:
             task = Task(self.displayName, self.id, tsk)
             if task.status != "completed":
-                # print("    " + task.title)
-                # print(task.dueDateTime)
-                # if task.dueDateTime != "":
-                #     print()
                 self.tasks.append(task)
 
     def tasks_remaining(self):
+        # Returns True if there are still tasks due today that haven't been moved yet
         done = True
         for task in self.tasks:
-            if task.dueDate == date_today and self.displayName != "Tareas":
+            if task.dueDate == date_today:
                 done = False
         return not done
 
@@ -119,11 +115,14 @@ class Task():
 
 
 class Calendar():
+    # Here I'd put my Calendar class... if I had one!!
     pass
 
 
 class Event():
+    # Here I'd put my Event class... if I had one!!
     pass
+
 
 def tasklist_by_name(name):
     # Returns tasklist instance if found by name
@@ -228,6 +227,7 @@ def run():
     print(">> Tasks loaded successfully")
 
     # 1.2 Load events
+    # Pending...
 
     # 2. Get DateTime format of today
     global date_today
@@ -239,6 +239,8 @@ def run():
     # 3.1 Move tasks accordingly
     tareas = tasklist_by_name("Tareas")
     for tasklist in tasklists:
+        if tasklist == tareas:
+            continue
         loop = 0
         while tasklist.tasks_remaining():
             for task in tasklist.tasks:
@@ -251,3 +253,4 @@ def run():
     print(">> Done!")
 
     # 3.2 Create events accordingly
+    # Pending...
