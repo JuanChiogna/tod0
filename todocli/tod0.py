@@ -1,5 +1,5 @@
 from datetime import datetime
-from todocli import auth
+from todocli import auth, interface
 import re
 
 class ToDo():
@@ -134,6 +134,14 @@ class Tasklist():
                 done = False
         return not done
 
+    # Creates a new task
+    def create_task(self, title):
+        if auth.create_task(self.id, title):
+            self.load_tasks()
+            return True
+        else:
+            return False
+
     # Deletes a given task from the tasklist
     def delete_task(self, task_id, silent=False):
         if task_id not in self.task_ids:
@@ -192,7 +200,7 @@ class Task():
         reversed_dueDate = reverse_date(dueDate)
         request_body = {"dueDateTime": {"dateTime": f"{reversed_dueDate}T03:00:00.0000000", "timeZone": "UTC"}}
         if auth.update_task(self.parent_id, self.id, request_body):
-            print(f">> Setted due date of task '{self.title}' to '{dueDate}'.")
+            print(f">> Set due date of task '{self.title}' to '{dueDate}'.")
             return True
         else:
             print(f">> Could not set due date of task '{self.title}' to '{dueDate}'.")
@@ -206,15 +214,38 @@ def date_today():
     return "-".join([day, month, year])
 
 # Takes a task's request_body json and returns its due date in format "dd-mm-yyyy"
-def parse_date(request_body):
-    date_dict = request_body.get("dueDateTime", {})
-    if date_dict != {}:
-        date = date_dict.get("dateTime", "")
-        date = date.replace("T00:00:00.0000000", "")
-        date = date.replace("T03:00:00.0000000", "")
-    else:
-        date = ""
-    return reverse_date(date)
+def parse_date(argument):
+    # If argument is a json dict, parse the date from it
+    if type(argument) is dict:
+        request_body = argument
+        date_dict = request_body.get("dueDateTime", {})
+        if date_dict != {}:
+            date = date_dict.get("dateTime", "")
+            date = date.replace("T00:00:00.0000000", "")
+            date = date.replace("T03:00:00.0000000", "")
+        else:
+            date = ""
+        return reverse_date(date)
+
+    # If argument is a string, parse the date from it
+    elif type(argument) is str:
+        text = argument
+        # Re match. Matches "dd/mm/yy" pattern on tasks 
+        match = re.search("((\d+)\/(\d+)(\/(\d+))?)", text)
+        if match is None:
+            return None
+        else:
+            date = match.group(1)
+            day = match.group(2)
+            month = match.group(3)
+            year = match.group(5)
+            if year is None:
+                year = date_today().split("-")[2]
+            elif len(year) == 2:
+                year = f"20{year}"
+            day, month, year = [f"0{x}" if len(str(x)) < 2 else f"{x}" for x in (day, month, year)]
+            date = "-".join([day, month, year])
+            return date
 
 # Takes a date with format "yyyy-mm-dd" and returns "dd-mm-yyyy" or vice versa
 def reverse_date(date):
@@ -231,6 +262,7 @@ def move_tasks_by_date():
     to_do.load_tasks()
     print(">> Tasks loaded successfully")
     print(f">> Today's date is {date_today()}")
+
 
     # Default list name
     default_list = to_do.tasklist_by_name("Tareas")
@@ -252,10 +284,16 @@ def move_tasks_by_date():
 
 # Creates a quick task
 def quick_task():
-    title = input(">> ")
+    title = interface.run()
+    if title is None:
+        return
     to_do = ToDo()
-
     # Default list name
     default_list = to_do.tasklist_by_name("Tareas")
-    
-    auth.create_task(default_list.id, title)            
+    date = parse_date(title)
+    default_list.create_task(title)
+    print(f">> Task '{title}' created successfully")
+    if date is not None:
+        print(f">> Date recognized: {date}")
+        task = default_list.task_by_name(title)
+        task.set_due_date(date)
