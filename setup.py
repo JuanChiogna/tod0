@@ -8,7 +8,7 @@ setup(
     packages=find_packages(),
     url="https://github.com/JuanChiogna/tod0",
     license="LICENSE",
-    description="A Terminal Client for Microsoft To-Do.",
+    description="Automation tool for Microsoft To-Do.",
     install_requires=[
         "prompt-toolkit",
         "pyyaml",
@@ -17,6 +17,7 @@ setup(
         "tzlocal",
     ],
     include_package_data=True,
+    package_data={'': ['Microsoft-To-Do.ico']},
     entry_points="""
         [console_scripts]
         tod0=todocli.tod0:move_tasks_by_date
