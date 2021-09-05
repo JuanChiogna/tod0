@@ -233,7 +233,7 @@ def parse_date(argument):
         # Re match. Matches "dd/mm/yy" pattern on tasks 
         match = re.search("((\d+)\/(\d+)(\/(\d+))?)", text)
         if match is None:
-            return None
+            return text, None
         else:
             date = match.group(1)
             day = match.group(2)
@@ -244,8 +244,9 @@ def parse_date(argument):
             elif len(year) == 2:
                 year = f"20{year}"
             day, month, year = [f"0{x}" if len(str(x)) < 2 else f"{x}" for x in (day, month, year)]
+            text = text.replace(date, "").rstrip(" ")
             date = "-".join([day, month, year])
-            return date
+            return text, date
 
 # Takes a date with format "yyyy-mm-dd" and returns "dd-mm-yyyy" or vice versa
 def reverse_date(date):
@@ -290,7 +291,7 @@ def quick_task():
     to_do = ToDo()
     # Default list name
     default_list = to_do.tasklist_by_name("Tareas")
-    date = parse_date(title)
+    title, date = parse_date(title)
     default_list.create_task(title)
     print(f">> Task '{title}' created successfully")
     if date is not None:
