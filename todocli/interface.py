@@ -1,44 +1,50 @@
 import tkinter as tk
 import os
 
-def get_value(event):
-    global input_value, entry_box, window
-    input_value = entry_box.get()
+def get_values(event):
+    global window, title_value, title_entry, details_value, details_entry
+    title_value = title_entry.get()
+    details_value = details_entry.get()
     window.destroy()
 
-def center_window(width=300, height=200):
-    # get screen width and height
-    screen_width = window.winfo_screenwidth()
-    screen_height = window.winfo_screenheight()
+def toggle_details(event):
+    global window, title_entry, details_entry
+    if details_entry.winfo_viewable():
+        details_entry.grid_remove()
+        title_entry.focus()
 
-    # calculate position x and y coordinates
-    x = (screen_width/2) - (width/2)
-    y = (screen_height/4) - (height/2)
-    window.geometry('%dx%d+%d+%d' % (width, height, x, y))
+    else:
+        details_entry.grid(row=1, sticky=tk.E+tk.W)
+        details_entry.selection_range(0, tk.END)
+        details_entry.focus()
+
 
 def run():
-    global input_value, entry_box, window
-
-    window = tk.Tk()
-    window.title("Microsoft To Do: Quick Task")
-    window.iconbitmap(f"{os.path.dirname(os.path.abspath(__file__))}\\Microsoft-To-Do.ico")
-    window.attributes("-topmost", True)
-    window.lift()
-
-    input_value = None
-
-    entry_box = tk.Entry(window, font = "SegoeUI 25", fg = "white", width = 50, borderwidth=5)
-    entry_box.configure({"background": "#292929"})
-    entry_box.pack()
-    entry_box.focus()
-
-    window.bind("<Return>", get_value)
-    window.bind("<Escape>", lambda x: window.destroy())
-
-    window.after(1000, entry_box.focus)
-    center_window(600, 50)
+    global title_value, details_value
     window.mainloop()
-    return input_value
+    return title_value, details_value
+
+window = tk.Tk()
+window.title("Microsoft To Do: Quick Task")
+window.iconbitmap(f"{os.path.dirname(os.path.abspath(__file__))}\\Microsoft-To-Do.ico")
+window.attributes("-topmost", True)
+window.lift()
+
+title_value = ""
+details_value = ""
+
+title_entry = tk.Entry(window, font = "SegoeUI 26",bg="#292929", fg = "white", width = 60, borderwidth=5)
+title_entry.grid(row=0, sticky=tk.N+tk.S)
+title_entry.focus()
+
+details_entry = tk.Entry(window, font = "SegoeUI 16",bg="#292929", fg = "white", borderwidth=5)
+
+window.after(100, window.focus_force)
+window.after(200, title_entry.focus_force)
+
+window.bind("<Return>", get_values)
+window.bind("<Tab>", toggle_details)
+window.bind("<Escape>", lambda x: window.destroy())
 
 if __name__ == "__main__":
     print(run())

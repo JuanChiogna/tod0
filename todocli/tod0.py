@@ -135,8 +135,8 @@ class Tasklist():
         return not done
 
     # Creates a new task
-    def create_task(self, title):
-        if auth.create_task(self.id, title):
+    def create_task(self, title, request_body={}):
+        if auth.create_task(self.id, title, request_body):
             self.load_tasks()
             return True
         else:
@@ -284,15 +284,15 @@ def move_tasks_by_date():
 
 
 # Creates a quick task
-def quick_task():
-    title = interface.run()
-    if title is None:
+def quick_task(tasklist_name="Tareas"):
+    title, details = interface.run()
+    if title is "":
         return
     to_do = ToDo()
     # Default list name
-    default_list = to_do.tasklist_by_name("Tareas")
+    default_list = to_do.tasklist_by_name(tasklist_name)
     title, date = parse_date(title)
-    default_list.create_task(title)
+    default_list.create_task(title, {"body": {"content": details, "contentType": "text"}})
     print(f">> Task '{title}' created successfully")
     if date is not None:
         print(f">> Date recognized: {date}")
